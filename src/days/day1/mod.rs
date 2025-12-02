@@ -1,4 +1,4 @@
-// https://adventofcode.com/2024/day/1
+// https://adventofcode.com/2025/day/1
 
 pub fn solution_part1(input: &str) -> usize {
     let mut pointer: i32 = 50;
@@ -35,49 +35,57 @@ pub fn solution_part1(input: &str) -> usize {
 
 pub fn solution_part2(input: &str) -> usize {
     let mut zeroes: usize = 0;
-    let steps = input
-        .lines()
-        .map(|line| {
-            let mut chars = line.chars();
-            (
-                chars.next().unwrap(),
-                chars.collect::<String>().parse::<i32>().unwrap(),
-            )
-        })
-        .collect::<Vec<_>>();
+    let steps = Step::from_input(input);
 
     let mut pointer: i32 = 50;
     for step in steps {
-        let complete_turns = step.1 as usize / 100;
-        let movements = if complete_turns != 0 {
-            zeroes += complete_turns;
-            step.1 - complete_turns as i32 * 100
-        } else {
-            step.1
-        };
+        let multiplier = (step.dir == Dir::Left) as i32 * 2 - 1;
+        let complete_turns = step.amount as usize / 100;
+        zeroes += complete_turns;
+        let movements = step.amount - complete_turns as i32 * 100;
 
         let prev_pointer = pointer;
-        match step.0 {
-            'L' => {
-                pointer -= movements;
-            }
-            'R' => {
-                pointer += movements;
-            }
-            _ => unreachable!(),
-        }
+        pointer += movements * multiplier;
 
         let pointer_without_modulo = pointer;
         pointer = pointer.rem_euclid(100);
 
-        if pointer == 0 {
-            zeroes += 1;
-        } else if pointer_without_modulo != pointer && prev_pointer != 0 {
+        if pointer == 0 || pointer_without_modulo != pointer && prev_pointer != 0 {
             zeroes += 1
         }
     }
 
     zeroes
+}
+
+struct Step {
+    dir: Dir,
+    amount: i32,
+}
+
+#[derive(PartialEq)]
+enum Dir {
+    Left,
+    Right,
+}
+
+impl Step {
+    fn from_input(input: &str) -> Vec<Self> {
+        input
+            .lines()
+            .map(|line| {
+                let mut chars = line.chars();
+                Self {
+                    dir: match chars.next().unwrap() {
+                        'L' => Dir::Left,
+                        'R' => Dir::Right,
+                        _ => unreachable!(),
+                    },
+                    amount: chars.collect::<String>().parse::<i32>().unwrap(),
+                }
+            })
+            .collect::<Vec<_>>()
+    }
 }
 
 #[cfg(test)]
