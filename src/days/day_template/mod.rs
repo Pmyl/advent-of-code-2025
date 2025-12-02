@@ -1,4 +1,4 @@
-// https://adventofcode.com/2024/day/1
+// https://adventofcode.com/2025/day/1
 
 pub fn solution_part1(input: &str) -> usize {
     0
