@@ -43,6 +43,10 @@ pub fn solution_part2(input: &str) -> usize {
     total_invalid
 }
 
+fn digits(i: usize) -> usize {
+    i.checked_ilog10().unwrap_or(0) as usize + 1
+}
+
 fn chunk_compare(mut n: usize, digits: usize, digits_to_compare: usize) -> bool {
     if digits % digits_to_compare != 0 {
         return false;
@@ -61,22 +65,6 @@ fn chunk_compare(mut n: usize, digits: usize, digits_to_compare: usize) -> bool 
     }
 
     true
-}
-
-fn digits(n: usize) -> usize {
-    match n {
-        ..10 => 1,
-        10..100 => 2,
-        100..1000 => 3,
-        1000..10000 => 4,
-        10000..100000 => 5,
-        100000..1000000 => 6,
-        1000000..10000000 => 7,
-        10000000..100000000 => 8,
-        100000000..1000000000 => 9,
-        1000000000..10000000000 => 10,
-        _ => todo!(),
-    }
 }
 
 struct Range {
