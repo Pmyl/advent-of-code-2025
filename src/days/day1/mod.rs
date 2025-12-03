@@ -3,26 +3,12 @@
 pub fn solution_part1(input: &str) -> usize {
     let mut pointer: i32 = 50;
     let mut zeroes = 0;
-    let steps = input
-        .lines()
-        .map(|line| {
-            let mut chars = line.chars();
-            (
-                chars.next().unwrap(),
-                chars.collect::<String>().parse::<i32>().unwrap(),
-            )
-        })
-        .collect::<Vec<_>>();
+    let steps = Step::from_input(input);
 
     for step in steps {
-        match step.0 {
-            'L' => {
-                pointer = (pointer - step.1).rem_euclid(100);
-            }
-            'R' => {
-                pointer = (pointer + step.1).rem_euclid(100);
-            }
-            _ => unreachable!(),
+        match step.dir {
+            Dir::Left => pointer = (pointer - step.amount).rem_euclid(100),
+            Dir::Right => pointer = (pointer + step.amount).rem_euclid(100),
         }
 
         if pointer == 0 {
@@ -112,7 +98,7 @@ L82";
 
     #[test]
     fn test_part1() {
-        assert_eq!(solution_part1(INPUT), 1036);
+        assert_eq!(solution_part1(INPUT), 1191);
     }
 
     #[test]
@@ -122,6 +108,6 @@ L82";
 
     #[test]
     fn test_part2() {
-        assert_eq!(solution_part2(INPUT), 6228);
+        assert_eq!(solution_part2(INPUT), 6858);
     }
 }
