@@ -106,6 +106,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(solution_part2(INPUT), 0);
+        assert_eq!(solution_part2(INPUT), 9290);
     }
 }
