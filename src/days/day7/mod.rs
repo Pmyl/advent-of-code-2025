@@ -52,11 +52,11 @@ pub fn solution_part2(input: &str) -> usize {
     let input = input.trim().as_bytes();
     let mut i = 0;
     let row_size;
-    let start: usize = {
-        let s_column;
+    let start;
+    {
         loop {
             if input[i] == b'S' {
-                s_column = i;
+                start = i;
                 while input[i] != b'\n' {
                     i += 1;
                 }
@@ -65,13 +65,14 @@ pub fn solution_part2(input: &str) -> usize {
             }
             i += 1;
         }
-        s_column
     };
 
-    let mut cache = vec![-1isize; input.len()];
-    through_timelines_recursive(input, start, row_size, &mut cache) as usize
+    count_timelines(input, start, row_size)
 }
 
+// Top-Down dynamic programming solution
+// Left here as reference
+#[allow(dead_code)]
 fn through_timelines_recursive(
     input: &[u8],
     mut i: usize,
@@ -95,6 +96,26 @@ fn through_timelines_recursive(
     }
 
     cache[i]
+}
+
+// Bottom-Up dynamic programming solution
+// *_*
+fn count_timelines(input: &[u8], start: usize, row_size: usize) -> usize {
+    let mut dp = vec![1usize; input.len()];
+
+    for i in (0..input.len() - 1).rev() {
+        let down_i = i + row_size + 1;
+        if down_i >= input.len() {
+            continue;
+        }
+
+        match input[i] {
+            b'^' => dp[i] = dp[down_i - 1] + dp[down_i + 1],
+            _ => dp[i] = dp[down_i],
+        }
+    }
+
+    dp[start]
 }
 
 #[cfg(test)]
