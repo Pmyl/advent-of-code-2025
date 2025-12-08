@@ -1,18 +1,7 @@
 // https://adventofcode.com/2025/day/8
 
 pub fn solution_part1(input: &str, connections: usize) -> usize {
-    let boxes = input
-        .trim()
-        .lines()
-        .map(|line| {
-            let mut coordinates = line.splitn(3, ",");
-            Pos {
-                x: coordinates.next().unwrap().parse::<usize>().unwrap(),
-                y: coordinates.next().unwrap().parse::<usize>().unwrap(),
-                z: coordinates.next().unwrap().parse::<usize>().unwrap(),
-            }
-        })
-        .collect::<Vec<Pos>>();
+    let boxes = Pos::from_input(input);
 
     let mut distances = Vec::<((usize, usize), usize)>::new();
     for i in 0..boxes.len() - 1 {
@@ -51,11 +40,12 @@ pub fn solution_part1(input: &str, connections: usize) -> usize {
 
         if i_n != j_n {
             // move all circuits from j's to i's
-            let to_move = circuits[j_n - 1].drain(..).collect::<Vec<_>>();
-            for j_neighbour in &to_move {
-                circuit_connections[*j_neighbour] = i_n;
+            let [circuit_j, circuit_i] = circuits.get_disjoint_mut([j_n - 1, i_n - 1]).unwrap();
+            let to_move = circuit_j.drain(..);
+            for j_neighbour in to_move {
+                circuit_connections[j_neighbour] = i_n;
+                circuit_i.push(j_neighbour)
             }
-            circuits[i_n - 1].extend(to_move);
         }
     }
 
@@ -71,7 +61,54 @@ pub fn solution_part1(input: &str, connections: usize) -> usize {
 }
 
 pub fn solution_part2(input: &str) -> usize {
-    0
+    let boxes = Pos::from_input(input);
+
+    let mut distances = Vec::<((usize, usize), usize)>::new();
+    for i in 0..boxes.len() - 1 {
+        for j in i + 1..boxes.len() {
+            distances.push(((i, j), boxes[i].distance(&boxes[j])));
+        }
+    }
+
+    distances.sort_by_key(|d| d.1);
+    let closest_boxes = distances.into_iter().map(|d| d.0);
+
+    let mut circuit_connections = vec![0usize; boxes.len()];
+    let mut circuits: Vec<Vec<usize>> = vec![];
+    for (i, j) in closest_boxes {
+        let j_n = circuit_connections[j];
+        let i_n = circuit_connections[i];
+
+        if i_n == 0 && j_n == 0 {
+            circuits.push(vec![i, j]);
+            circuit_connections[i] = circuits.len();
+            circuit_connections[j] = circuits.len();
+        } else if i_n == 0 {
+            circuit_connections[i] = j_n;
+            circuits[j_n - 1].push(i);
+        } else if j_n == 0 {
+            circuit_connections[j] = i_n;
+            circuits[i_n - 1].push(j);
+        } else if i_n != j_n {
+            // move all circuits from j's to i's
+            let [circuit_j, circuit_i] = circuits.get_disjoint_mut([j_n - 1, i_n - 1]).unwrap();
+            let to_move = circuit_j.drain(..);
+            for j_neighbour in to_move {
+                circuit_connections[j_neighbour] = i_n;
+                circuit_i.push(j_neighbour)
+            }
+        } else {
+            continue;
+        }
+
+        if i_n != 0 && circuits[i_n - 1].len() == boxes.len()
+            || j_n != 0 && circuits[j_n - 1].len() == boxes.len()
+        {
+            return boxes[i].x * boxes[j].x;
+        }
+    }
+
+    unreachable!()
 }
 
 struct Pos {
@@ -81,6 +118,21 @@ struct Pos {
 }
 
 impl Pos {
+    fn from_input(input: &str) -> Vec<Self> {
+        input
+            .trim()
+            .lines()
+            .map(|line| {
+                let mut coordinates = line.splitn(3, ",");
+                Self {
+                    x: coordinates.next().unwrap().parse::<usize>().unwrap(),
+                    y: coordinates.next().unwrap().parse::<usize>().unwrap(),
+                    z: coordinates.next().unwrap().parse::<usize>().unwrap(),
+                }
+            })
+            .collect::<Vec<Self>>()
+    }
+
     // Not square rooted because we only care about relative distance
     fn distance(&self, pos: &Pos) -> usize {
         (self.x as isize - pos.x as isize).pow(2) as usize
@@ -133,6 +185,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(solution_part2(INPUT), 0);
+        assert_eq!(solution_part2(INPUT), 9617397716);
     }
 }
