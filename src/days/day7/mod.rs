@@ -50,22 +50,8 @@ pub fn solution_part1(input: &str) -> usize {
 
 pub fn solution_part2(input: &str) -> usize {
     let input = input.trim().as_bytes();
-    let mut i = 0;
-    let row_size;
-    let start;
-    {
-        loop {
-            if input[i] == b'S' {
-                start = i;
-                while input[i] != b'\n' {
-                    i += 1;
-                }
-                row_size = i;
-                break;
-            }
-            i += 1;
-        }
-    };
+    let start = input.iter().position(|c| *c == b'S').unwrap();
+    let row_size = input.iter().position(|c| *c == b'\n').unwrap();
 
     count_timelines(input, start, row_size)
 }
@@ -103,11 +89,8 @@ fn through_timelines_recursive(
 fn count_timelines(input: &[u8], start: usize, row_size: usize) -> usize {
     let mut dp = vec![1usize; input.len()];
 
-    for i in (0..input.len() - 1).rev() {
+    for i in (0..input.len() - 1 - row_size - 1).rev() {
         let down_i = i + row_size + 1;
-        if down_i >= input.len() {
-            continue;
-        }
 
         match input[i] {
             b'^' => dp[i] = dp[down_i - 1] + dp[down_i + 1],
