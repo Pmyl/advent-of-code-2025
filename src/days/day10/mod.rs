@@ -1,6 +1,6 @@
 // https://adventofcode.com/2025/day/1
 
-use std::fmt::Display;
+use std::{collections::HashMap, fmt::Display};
 
 pub fn solution_part1(input: &str) -> usize {
     let diagrams = Diagram::from_input(input);
@@ -30,7 +30,7 @@ struct Diagram {
 struct IndicatorLights(u16);
 
 // each block of 12 bits is a counter. 12 bits should be enough for each counter, and there are max 10 counters 10 * 12 = 120 with 8 leftovers
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 struct Joltage(u128);
 
 impl Diagram {
@@ -72,7 +72,7 @@ impl Diagram {
     }
 
     fn min_presses_joltage(&self) -> usize {
-        min_presses_joltage_recursive(self, 0, self.joltage_requirements)
+        min_presses_joltage_recursive(self, 0, self.joltage_requirements, &mut HashMap::new())
     }
 }
 
@@ -94,65 +94,42 @@ fn min_presses_recursive(diagram: &Diagram, i: usize, mut current: IndicatorLigh
     no_press.min(1 + press)
 }
 
-fn min_presses_joltage_recursive(diagram: &Diagram, i: usize, current: Joltage) -> usize {
+fn min_presses_joltage_recursive(
+    diagram: &Diagram,
+    i: usize,
+    current: Joltage,
+    memo: &mut HashMap<(usize, Joltage), usize>,
+) -> usize {
     if current.is_empty() {
         return 0;
     }
+
+    if let Some(res) = memo.get(&(i, current)) {
+        return *res;
+    }
+
+    let no_press = if diagram.button_wirings.len() == i + 1 {
+        usize::MAX - 1
+    } else {
+        min_presses_joltage_recursive(diagram, i + 1, current, memo)
+    };
 
     let press = if diagram.button_wirings[i]
         .iter()
         .any(|b| current.counter(*b) == 0)
     {
-        // println!(
-        //     "Press is MAX. i: {} Buttons: {:?}, Current: {}",
-        //     i, diagram.button_wirings[i], current
-        // );
         usize::MAX - 1
     } else {
-        // println!(
-        //     "Press is GOOD. i: {} Buttons: {:?}, Current: {}",
-        //     i, diagram.button_wirings[i], current
-        // );
         min_presses_joltage_recursive(
             diagram,
             i,
             current.decrement_many(diagram.button_wirings[i].iter().copied()),
+            memo,
         )
     };
 
-    let no_press = if diagram.button_wirings.len() == i + 1 {
-        // println!(
-        //     "No Press is MAX. i: {} Buttons: {:?}, Current: {}",
-        //     i, diagram.button_wirings[i], current
-        // );
-        usize::MAX - 1
-    } else {
-        // println!(
-        //     "No Press is GOOD. i: {} Buttons: {:?}, Current: {}",
-        //     i, diagram.button_wirings[i], current
-        // );
-        min_presses_joltage_recursive(diagram, i + 1, current)
-    };
-
     let res = no_press.min(1 + press);
-    // println!(
-    //     "Req: {} Curr: {} i: {} buttons: {:?} NoPress: {} Press: {} Res: {}",
-    //     diagram.joltage_requirements,
-    //     current,
-    //     i,
-    //     diagram.button_wirings[i],
-    //     if no_press != usize::MAX - 1 {
-    //         no_press.to_string()
-    //     } else {
-    //         "MAX".to_string()
-    //     },
-    //     if press != usize::MAX - 1 {
-    //         press.to_string()
-    //     } else {
-    //         "MAX".to_string()
-    //     },
-    //     res
-    // );
+    memo.insert((i, current), res);
     res
 }
 
@@ -295,6 +272,16 @@ mod tests {
     #[test]
     fn test_part2_example() {
         assert_eq!(solution_part2(EXAMPLE), 33);
+    }
+
+    #[test]
+    fn test_part2_example_2() {
+        assert_eq!(
+            solution_part2(
+                "[..#.##] (0,1,3,4) (0,3,4) (0,5) (0,1,2) (3,5) (0,2,3,4) (2,3) {58,27,37,57,37,24}"
+            ),
+            999
+        );
     }
 
     #[test]
